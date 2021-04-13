@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  db:
+    image: mysql
+    command: mysqld --init-file="/tmp/database/data.sql"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: practice
+    volumes:
+      - ./sql:/tmp/database
+      - database-exercises:/var/lib/mysql
+    ports:
+      - 3306:3306
+    networks:
+      - db-practice
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: example
+    networks:
+      - db-practice
+
+volumes:
+  database-exercises:
+  
+networks:
+  db-practice:
+    driver: bridge
