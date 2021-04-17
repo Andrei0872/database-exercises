@@ -1,6 +1,3 @@
-CREATE DATABASE practice;
-USE practice;
-
 CREATE TABLE regions (
 	region_id INT (11) UNSIGNED NOT NULL,
 	region_name VARCHAR(25),

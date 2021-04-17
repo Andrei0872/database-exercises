@@ -3,13 +3,12 @@ version: '3'
 services:
   db:
     image: mysql
-    command: mysqld --init-file="/tmp/database/data.sql"
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: practice
     volumes:
-      - ./sql:/tmp/database
+      - ./sql:/docker-entrypoint-initdb.d
       - database-exercises:/var/lib/mysql
     ports:
       - 3306:3306
