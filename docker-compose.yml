@@ -6,14 +6,14 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: example
-      MYSQL_DATABASE: practice
+      MYSQL_DATABASE: tema-1-laborator
     volumes:
       - ./sql:/docker-entrypoint-initdb.d
-      - database-exercises:/var/lib/mysql
+      - database-tema-1-laborator:/var/lib/mysql
     ports:
       - 3306:3306
     networks:
-      - db-practice
+      - db-tema-1-laborator
 
   phpmyadmin:
     image: phpmyadmin
@@ -25,11 +25,11 @@ services:
       PMA_USER: root
       PMA_PASSWORD: example
     networks:
-      - db-practice
+      - db-tema-1-laborator
 
 volumes:
-  database-exercises:
+  database-tema-1-laborator:
   
 networks:
-  db-practice:
+  db-tema-1-laborator:
     driver: bridge
