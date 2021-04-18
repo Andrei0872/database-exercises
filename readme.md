@@ -4,7 +4,6 @@
 
 * [ ] add useful tip
 * [ ] create ToC
-* [ ] add 2nd version for task 6
 
 ---
 
@@ -191,4 +190,138 @@ inner join (
 ) data
 on data.COD_CANDIDAT = c.ID_CANDIDAT
 ;
+```
+
+### Task 7
+
+```sql
+/*
+7. Dați exemplu de interogare care utilizează operatorul OUTER JOIN, enunțați semnificația
+rezultatului (ce problema rezolva interogarea). Interogarea va utiliza cel puțin trei tabele.
+*/
+
+-- In MySQL **nu** exista `OUTER JOIN`: https://stackoverflow.com/a/12473340/9632621
+-- dar se poate simula cu LEFT JOIN + RIGHT JOIN
+
+/*
+Sa se selecteze, pentru fiecare candidat, numele acestuia, numele si data publicarii job-ului la care a obtinut un interviu. 
+Se vor afisa si job-urile la care nu a obtinut nimeni vreun interviu, dar si candidatii care nu au obtinut niciun interviu.
+*/
+
+/*
+Pentru a se vedea mai clar rezultatul query-ului, mai inseram un job la care nu a aplicat nimeni, si pentru care nici nu s-a inregistrat vreun interviu. 
+Se va insera si un candidat care nu a obtinut niciun interviu.
+
+La final(si inainte) cele de mai sus se vor sterge, pentru a lasa lucrurile ca inainte.
+*/
+
+delete from JOB j where j.JOB_ID = 5;
+delete from CANDIDAT c where c.ID_CANDIDAT = 19;
+
+insert into JOB (JOB_ID,DENUMIRE,DATA_PUBLICARE_ANUNT) values (5,'DevOps engineer',str_to_date('19-04-2021','%d-%m-%Y'));
+Insert into CANDIDAT (ID_CANDIDAT,NUME,PRENUME,DATA_NASTERE,STUDII) values (19,'Doe','Jane',str_to_date('19-04-2001','%d-%m-%Y'),'fmi');
+
+with candidateInterviewOuter as (
+	select distinct c.NUME, c.PRENUME, i.COD_JOB  from CANDIDAT c
+    left join INTERVIU i
+        on i.COD_CANDIDAT = c.ID_CANDIDAT
+	union
+    select distinct c2.NUME, c2.PRENUME, i2.COD_JOB  from CANDIDAT c2
+	right join INTERVIU i2
+    	on i2.COD_CANDIDAT = c2.ID_CANDIDAT
+)
+
+select *, j.DENUMIRE, j.DATA_PUBLICARE_ANUNT 
+from candidateInterviewOuter ci
+left join JOB j
+	on j.JOB_ID = ci.COD_JOB
+union
+select *, j2.DENUMIRE, j2.DATA_PUBLICARE_ANUNT 
+from candidateInterviewOuter ci2
+right join JOB j2
+	on j2.JOB_ID = ci2.COD_JOB
+;
+
+delete from JOB j where j.JOB_ID = 5;
+delete from CANDIDAT c where c.ID_CANDIDAT = 19;
+```
+
+### Task 8
+
+```sql
+/*
+8. Care este denumirea jobului pentru care diferența dintre data publicării anunțului și data
+la care a fost programat primului interviu este maximă?
+*/
+
+with jobWithTimeDiff as (
+	select *, timediff(data.first_scheduled_date, j.DATA_PUBLICARE_ANUNT) as 'diff_btw_published_and_interview'
+    from JOB j
+    inner join (
+        select i.COD_JOB, min(i.DATA_INTERVIU) as 'first_scheduled_date'
+        from INTERVIU i
+        group by i.COD_JOB
+    ) data
+        on data.COD_JOB = j.JOB_ID
+)
+
+select 
+	jobWithTimeDiff.DENUMIRE
+    -- , diff_btw_published_and_interview
+from jobWithTimeDiff
+where jobWithTimeDiff.diff_btw_published_and_interview = (select max(diff_btw_published_and_interview) from jobWithTimeDiff)
+;
+```
+
+### Task 9
+
+```sql
+/*
+9. Să se afișeze numele și prenumele candidaților care au aplicat la cel puțin un job cu un
+punctaj_cv peste media punctajelor pentru jobul respectiv.
+*/
+
+with applicationAvgScore as (
+	select a.COD_JOB, avg(a.PUNCTAJ_CV) as 'avg_score'
+    from APLICA a
+    group by a.COD_JOB
+)
+
+select c.NUME, c.PRENUME
+from APLICA a
+-- Raman doar aplicatiile pentru care candidatul a obtinut un punctaj peste medie
+inner join applicationAvgScore
+	on applicationAvgScore.COD_JOB = a.COD_JOB and a.PUNCTAJ_CV > applicationAvgScore.avg_score
+inner join CANDIDAT c
+	on c.ID_CANDIDAT = a.COD_CANDIDAT
+;
+```
+
+### Task 10
+
+```sql
+/*
+10. Pentru candidații care au aplicat la jobul cu id 1, afișați numărul de joburi distincte la care
+au aplicat, și punctaj_cv maxim.
+*/
+
+-- delete from APLICA a where a.DATA_APLICARE = str_to_date('19-04-2021','%d-%m-%Y');
+--insert into APLICA (COD_JOB,COD_CANDIDAT,DATA_APLICARE,PUNCTAJ_CV) values (1,1,str_to_date('19-04-2021','%d-%m-%Y'),72);
+
+
+select c.NUME, c.PRENUME, data.nr_jobs_applied, data.max_cv_score
+from CANDIDAT c
+inner join (
+	select 
+        a.COD_CANDIDAT, 
+        count(a.COD_JOB) as 'nr_jobs_applied', 
+        max(a.PUNCTAJ_CV) as 'max_cv_score'
+    from APLICA a
+    where a.COD_JOB = 1
+    group by a.COD_CANDIDAT
+) data
+	on data.COD_CANDIDAT = c.ID_CANDIDAT
+;
+
+-- delete from APLICA a where a.DATA_APLICARE = str_to_date('19-04-2021','%d-%m-%Y');
 ```
